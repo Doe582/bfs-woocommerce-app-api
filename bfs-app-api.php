@@ -50,6 +50,27 @@ function bfs_app_api_init()
     // Instantiate and register routes for the Instagram Feed API class.
     $instagram_feed_api = new BFS_Instagram_Feed_API();
     $instagram_feed_api->register_routes();
+
+    // Include the Orders API class.
+    require_once BFS_APP_API_DIR . 'includes/class-orders-api.php';
+
+    // Instantiate the Orders API class to register endpoints.
+    $orders_api = new BFS_Orders_API();
+    $orders_api->register_routes();
+
+    // Include the Account API class.
+    require_once BFS_APP_API_DIR . 'includes/class-account-api.php';
+
+    // Instantiate the Account API class to register endpoints.
+    $account_api = new BFS_Account_API();
+    $account_api->register_routes();
+
+    // Include the Addresses API class.
+    require_once BFS_APP_API_DIR . 'includes/class-addresses-api.php';
+
+    // Instantiate the Addresses API class to register endpoints.
+    $addresses_api = new BFS_Addresses_API();
+    $addresses_api->register_routes();
 }
 add_action('rest_api_init', 'bfs_app_api_init');
 
