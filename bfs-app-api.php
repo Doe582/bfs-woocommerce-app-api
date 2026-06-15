@@ -71,6 +71,13 @@ function bfs_app_api_init()
     // Instantiate the Addresses API class to register endpoints.
     $addresses_api = new BFS_Addresses_API();
     $addresses_api->register_routes();
+
+    // Include the Reviews API class.
+    require_once BFS_APP_API_DIR . 'includes/class-reviews-api.php';
+
+    // Instantiate the Reviews API class to register endpoints.
+    $reviews_api = new BFS_Reviews_API();
+    $reviews_api->register_routes();
 }
 add_action('rest_api_init', 'bfs_app_api_init');
 
