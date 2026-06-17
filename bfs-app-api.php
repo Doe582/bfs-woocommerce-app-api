@@ -18,6 +18,40 @@ define('BFS_APP_API_VERSION', '1.0.0');
 define('BFS_APP_API_DIR', plugin_dir_path(__FILE__));
 define('BFS_APP_API_URL', plugin_dir_url(__FILE__));
 
+// Include the Cart API class.
+require_once BFS_APP_API_DIR . 'includes/class-cart-api.php';
+
+// Include the Coupon API class.
+require_once BFS_APP_API_DIR . 'includes/class-coupon-api.php';
+
+// Include the Checkout API class.
+require_once BFS_APP_API_DIR . 'includes/class-checkout-api.php';
+
+// Include the Batch API class.
+require_once BFS_APP_API_DIR . 'includes/class-batch-api.php';
+
+// Include the Shipping API class.
+require_once BFS_APP_API_DIR . 'includes/class-shipping-api.php';
+
+// Include the Fees API class.
+require_once BFS_APP_API_DIR . 'includes/class-fees-api.php';
+
+// Include the JWT API class.
+require_once BFS_APP_API_DIR . 'includes/class-jwt-api.php';
+
+// Include the Rate Limit API class.
+require_once BFS_APP_API_DIR . 'includes/class-rate-limit-api.php';
+
+// Include the Sync API class.
+require_once BFS_APP_API_DIR . 'includes/class-sync-api.php';
+
+// Hook JWT into WordPress authentication
+add_filter('determine_current_user', ['HCM_JWT', 'authenticate'], 20);
+add_filter('rest_authentication_errors', ['HCM_JWT', 'auth_errors']);
+
+// Initialize Sync hooks
+HCM_Sync::init();
+
 /**
  * Initialize the plugin.
  */
@@ -78,6 +112,33 @@ function bfs_app_api_init()
     // Instantiate the Reviews API class to register endpoints.
     $reviews_api = new BFS_Reviews_API();
     $reviews_api->register_routes();
+
+    // Register Cart API endpoints.
+    $cart_api = new HCM_Cart();
+    $cart_api->register_routes();
+
+    // Register Coupon API endpoints.
+    $coupon_api = new HCM_Coupon();
+    $coupon_api->register_routes();
+
+    // Register Checkout API endpoints.
+    $checkout_api = new HCM_Checkout();
+    $checkout_api->register_routes();
+
+    // Register Batch API endpoints.
+    $batch_api = new HCM_Batch();
+    $batch_api->register_routes();
+
+    // Register Shipping API endpoints.
+    $shipping_api = new HCM_Shipping();
+    $shipping_api->register_routes();
+
+    // Register Fees API endpoints.
+    $fees_api = new HCM_Fees();
+    $fees_api->register_routes();
+
+    // Register JWT Auth API endpoints.
+    HCM_JWT::register_routes();
 }
 add_action('rest_api_init', 'bfs_app_api_init');
 
