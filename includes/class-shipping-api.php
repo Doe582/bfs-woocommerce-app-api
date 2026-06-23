@@ -2,7 +2,7 @@
 defined('ABSPATH') || exit;
 
 /**
- * Class HCM_Shipping
+ * Class BFS_Shipping_API
  *
  * Calculates available shipping rates using WooCommerce Shipping Zones.
  * No WC session required — uses WC_Shipping_Zones directly.
@@ -12,7 +12,7 @@ defined('ABSPATH') || exit;
  *   POST /bfsapp/v1/cart/shipping/select — choose a method & save to cart
  *   GET  /bfsapp/v1/cart/shipping/zones  — list all shipping zones (admin)
  */
-class HCM_Shipping {
+class BFS_Shipping_API {
 
     public function register_routes(): void {
         $ns = 'bfsapp/v1';
@@ -36,7 +36,7 @@ class HCM_Shipping {
         register_rest_route($ns, '/cart/shipping/zones', [
             'methods'             => 'GET',
             'callback'            => [$this, 'get_zones'],
-            'permission_callback' => [HCM_JWT::class, 'require_admin'],
+            'permission_callback' => [BFS_JWT_API::class, 'require_admin'],
         ]);
     }
 
@@ -44,7 +44,7 @@ class HCM_Shipping {
 
     public function get_rates(\WP_REST_Request $req) {
         $address = $this->parse_address($req);
-        $cart    = (new HCM_Cart())->load_session($req);
+        $cart    = (new BFS_Cart_API())->load_session($req);
         $rates   = $this->calculate($address, $cart);
 
         // Check free shipping from coupons
@@ -64,7 +64,7 @@ class HCM_Shipping {
     public function select(\WP_REST_Request $req) {
         $method_id = sanitize_text_field($req->get_param('method_id'));
         $address   = $this->parse_address($req);
-        $cart_ctrl = new HCM_Cart();
+        $cart_ctrl = new BFS_Cart_API();
         $cart      = $cart_ctrl->load_session($req);
         $rates     = $this->calculate($address, $cart);
 
@@ -76,8 +76,8 @@ class HCM_Shipping {
 
         if (!$selected) {
             return new \WP_Error(
-                'hcm_shipping_unavailable',
-                __('Selected shipping method is not available for this address.', 'hcm'),
+                'bfs_shipping_unavailable',
+                __('Selected shipping method is not available for this address.', 'bfs-app-api'),
                 ['status' => 400]
             );
         }
@@ -87,7 +87,7 @@ class HCM_Shipping {
         $cart_ctrl->save_session($req, $cart);
 
         return rest_ensure_response([
-            'message'  => __('Shipping method selected.', 'hcm'),
+            'message'  => __('Shipping method selected.', 'bfs-app-api'),
             'shipping' => $selected,
             'cart'     => $cart_ctrl->format_cart($cart),
         ]);
@@ -233,7 +233,7 @@ class HCM_Shipping {
 
         // Fallback to cart's saved address if not provided
         if (empty($raw)) {
-            $cart = (new HCM_Cart())->load_session($req);
+            $cart = (new BFS_Cart_API())->load_session($req);
             $raw  = $cart['shipping_address'] ?? [];
         }
 

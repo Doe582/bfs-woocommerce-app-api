@@ -2,7 +2,7 @@
 defined('ABSPATH') || exit;
 
 /**
- * Class HCM_Batch
+ * Class BFS_Batch_API
  *
  * Process up to 25 cart API operations in a single HTTP request.
  * Dramatically reduces round-trips for operations like:
@@ -30,7 +30,7 @@ defined('ABSPATH') || exit;
  *   ]
  * }
  */
-class HCM_Batch {
+class BFS_Batch_API {
 
     const MAX_REQUESTS = 25;
 
@@ -51,18 +51,18 @@ class HCM_Batch {
     }
 
     public function process(\WP_REST_Request $req) {
-        HCM_RateLimit::check($req, 'batch');
+        BFS_RateLimit_API::check($req, 'batch');
 
         $requests = $req->get_param('requests');
 
         if (!is_array($requests) || empty($requests)) {
-            return new \WP_Error('hcm_batch_empty', __('Requests array is required and must not be empty.', 'hcm'), ['status' => 400]);
+            return new \WP_Error('bfs_batch_empty', __('Requests array is required and must not be empty.', 'bfs-app-api'), ['status' => 400]);
         }
 
         if (count($requests) > self::MAX_REQUESTS) {
             return new \WP_Error(
-                'hcm_batch_too_large',
-                sprintf(__('Maximum %d requests per batch allowed.', 'hcm'), self::MAX_REQUESTS),
+                'bfs_batch_too_large',
+                sprintf(__('Maximum %d requests per batch allowed.', 'bfs-app-api'), self::MAX_REQUESTS),
                 ['status' => 400]
             );
         }
@@ -108,7 +108,7 @@ class HCM_Batch {
             return [
                 'index'  => $index,
                 'status' => 400,
-                'body'   => ['code' => 'hcm_missing_path', 'message' => 'Path is required.'],
+                'body'   => ['code' => 'bfs_missing_path', 'message' => 'Path is required.'],
             ];
         }
 
@@ -117,7 +117,7 @@ class HCM_Batch {
             return [
                 'index'  => $index,
                 'status' => 403,
-                'body'   => ['code' => 'hcm_batch_scope', 'message' => 'Batch requests are limited to BFS endpoints.'],
+                'body'   => ['code' => 'bfs_batch_scope', 'message' => 'Batch requests are limited to BFS endpoints.'],
             ];
         }
 
@@ -141,7 +141,7 @@ class HCM_Batch {
             $data     = $server->response_to_data($response, false);
             $status   = $response->get_status();
         } catch (\Throwable $e) {
-            $data   = ['code' => 'hcm_batch_exception', 'message' => $e->getMessage()];
+            $data   = ['code' => 'bfs_batch_exception', 'message' => $e->getMessage()];
             $status = 500;
         }
 

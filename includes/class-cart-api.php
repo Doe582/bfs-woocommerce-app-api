@@ -2,9 +2,9 @@
 defined('ABSPATH') || exit;
 
 /**
- * Class HCM_Cart
+ * Class BFS_Cart_API
  *
- * Core cart engine. Stores cart as JSON in wp_hcm_carts.
+ * Core cart engine. Stores cart as JSON in wp_bfs_carts.
  * Resolves session by:
  *   - Logged-in user → cart_key = "user_{id}"
  *   - Guest          → cart_key from X-Cart-Key header or ?cart_key param
@@ -17,7 +17,7 @@ defined('ABSPATH') || exit;
  *   DELETE /bfsapp/v1/cart/clear          — clear all
  *   POST   /bfsapp/v1/cart/transfer       — guest → user merge
  */
-class HCM_Cart {
+class BFS_Cart_API {
 
     // ── Route Registration ────────────────────────────────────────────────────
 
@@ -62,7 +62,7 @@ class HCM_Cart {
         register_rest_route($ns, '/cart/transfer', [
             'methods'             => 'POST',
             'callback'            => [$this, 'transfer_cart'],
-            'permission_callback' => [HCM_JWT::class, 'require_auth'],
+            'permission_callback' => [BFS_JWT_API::class, 'require_auth'],
             'args' => [
                 'cart_key' => ['required' => true, 'type' => 'string'],
             ],
@@ -77,7 +77,7 @@ class HCM_Cart {
     }
 
     public function add_item(\WP_REST_Request $req) {
-        HCM_RateLimit::check($req, 'add_item');
+        BFS_RateLimit_API::check($req, 'add_item');
 
         $product_id   = (int) $req->get_param('product_id');
         $variation_id = (int) ($req->get_param('variation_id') ?? 0);
@@ -107,13 +107,13 @@ class HCM_Cart {
         // Validate product
         $product = wc_get_product($variation_id ?: $product_id);
         if (!$product) {
-            return new \WP_Error('hcm_product_not_found', __('Product not found.', 'hcm'), ['status' => 404]);
+            return new \WP_Error('bfs_product_not_found', __('Product not found.', 'bfs-app-api'), ['status' => 404]);
         }
         if (!$product->is_purchasable()) {
-            return new \WP_Error('hcm_not_purchasable', __('This product cannot be purchased.', 'hcm'), ['status' => 400]);
+            return new \WP_Error('bfs_not_purchasable', __('This product cannot be purchased.', 'bfs-app-api'), ['status' => 400]);
         }
         if (!$product->is_in_stock()) {
-            return new \WP_Error('hcm_out_of_stock', __('Product is out of stock.', 'hcm'), ['status' => 400]);
+            return new \WP_Error('bfs_out_of_stock', __('Product is out of stock.', 'bfs-app-api'), ['status' => 400]);
         }
 
         // Load cart & build item key
@@ -143,7 +143,7 @@ class HCM_Cart {
         $cart     = $this->load_session($req);
 
         if (!isset($cart['items'][$key])) {
-            return new \WP_Error('hcm_item_not_found', __('Item not found in cart.', 'hcm'), ['status' => 404]);
+            return new \WP_Error('bfs_item_not_found', __('Item not found in cart.', 'bfs-app-api'), ['status' => 404]);
         }
 
         if ($quantity <= 0) {
@@ -162,7 +162,7 @@ class HCM_Cart {
         $cart = $this->load_session($req);
 
         if (!isset($cart['items'][$key])) {
-            return new \WP_Error('hcm_item_not_found', __('Item not found in cart.', 'hcm'), ['status' => 404]);
+            return new \WP_Error('bfs_item_not_found', __('Item not found in cart.', 'bfs-app-api'), ['status' => 404]);
         }
 
         unset($cart['items'][$key]);
@@ -174,7 +174,7 @@ class HCM_Cart {
     public function clear_cart(\WP_REST_Request $req) {
         $empty = $this->empty_cart();
         $this->save_session($req, $empty);
-        return rest_ensure_response(['message' => __('Cart cleared.', 'hcm'), 'cart' => $this->format_cart($empty)]);
+        return rest_ensure_response(['message' => __('Cart cleared.', 'bfs-app-api'), 'cart' => $this->format_cart($empty)]);
     }
 
     /**
@@ -183,7 +183,7 @@ class HCM_Cart {
      */
     public function transfer_cart(\WP_REST_Request $req) {
         global $wpdb;
-        $table     = $wpdb->prefix . 'hcm_carts';
+        $table     = $wpdb->prefix . 'bfs_carts';
         $guest_key = sanitize_text_field($req->get_param('cart_key'));
         $user_id   = get_current_user_id();
         $user_key  = "user_{$user_id}";
@@ -193,7 +193,7 @@ class HCM_Cart {
         );
 
         if (!$guest_row) {
-            return new \WP_Error('hcm_cart_not_found', __('Guest cart not found.', 'hcm'), ['status' => 404]);
+            return new \WP_Error('bfs_cart_not_found', __('Guest cart not found.', 'bfs-app-api'), ['status' => 404]);
         }
 
         $guest_cart = json_decode($guest_row->cart_data, true) ?: $this->empty_cart();
@@ -219,7 +219,7 @@ class HCM_Cart {
         $wpdb->delete($table, ['cart_key' => $guest_key]); // clean up guest cart
 
         return rest_ensure_response([
-            'message' => __('Cart transferred successfully.', 'hcm'),
+            'message' => __('Cart transferred successfully.', 'bfs-app-api'),
             'cart'    => $this->format_cart($user_cart),
         ]);
     }
@@ -259,7 +259,7 @@ class HCM_Cart {
     public function get_by_key(string $key): ?array {
         global $wpdb;
         $row = $wpdb->get_row($wpdb->prepare(
-            "SELECT cart_data FROM {$wpdb->prefix}hcm_carts WHERE cart_key = %s AND expires_at > NOW()",
+            "SELECT cart_data FROM {$wpdb->prefix}bfs_carts WHERE cart_key = %s AND expires_at > NOW()",
             $key
         ));
         if (!$row) return null;
@@ -269,8 +269,8 @@ class HCM_Cart {
 
     public function upsert(string $key, int $user_id, array $cart): void {
         global $wpdb;
-        $table   = $wpdb->prefix . 'hcm_carts';
-        $ttl     = (int) apply_filters('hcm_cart_ttl', 30 * DAY_IN_SECONDS);
+        $table   = $wpdb->prefix . 'bfs_carts';
+        $ttl     = (int) apply_filters('bfs_cart_ttl', 30 * DAY_IN_SECONDS);
         $expires = gmdate('Y-m-d H:i:s', time() + $ttl);
         $json    = wp_json_encode($cart);
 
@@ -404,7 +404,7 @@ class HCM_Cart {
      */
     public function recalculate_coupons(array &$cart): void {
         if (empty($cart['coupons'])) return;
-        $coupon_ctrl = new HCM_Coupon();
+        $coupon_ctrl = new BFS_Coupon_API();
         foreach ($cart['coupons'] as $code => &$data) {
             $coupon = new \WC_Coupon($code);
             if (!$coupon->get_id()) {

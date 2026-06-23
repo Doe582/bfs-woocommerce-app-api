@@ -2,12 +2,12 @@
 defined('ABSPATH') || exit;
 
 /**
- * Class HCM_Sync
+ * Class BFS_Sync_API
  * 
- * Synchronizes the custom headless cart table (wp_hcm_carts) 
+ * Synchronizes the custom headless cart table (wp_bfs_carts) 
  * with the native WooCommerce cart session.
  */
-class HCM_Sync {
+class BFS_Sync_API {
 
     /** @var bool Guard for recursion */
     private static $is_syncing = false;
@@ -16,25 +16,25 @@ class HCM_Sync {
      * Initialize synchronization hooks.
      */
     public static function init(): void {
-        // Sync HCM -> WooCommerce Cart when a normal page loads
-        add_action('woocommerce_cart_loaded_from_session', [self::class, 'sync_hcm_to_wc'], 20);
+        // Sync BFS -> WooCommerce Cart when a normal page loads
+        add_action('woocommerce_cart_loaded_from_session', [self::class, 'sync_bfs_to_wc'], 20);
 
         // Apply Headless fees to native WooCommerce cart
-        add_action('woocommerce_cart_calculate_fees',      [self::class, 'apply_hcm_fees_to_wc'], 20);
+        add_action('woocommerce_cart_calculate_fees',      [self::class, 'apply_bfs_fees_to_wc'], 20);
 
-        // Sync WooCommerce Cart -> HCM when anything changes on the frontend
-        add_action('woocommerce_add_to_cart',              [self::class, 'sync_wc_to_hcm'], 20);
-        add_action('woocommerce_cart_item_removed',        [self::class, 'sync_wc_to_hcm'], 20);
-        add_action('woocommerce_cart_item_restored',       [self::class, 'sync_wc_to_hcm'], 20);
-        add_action('woocommerce_cart_item_set_quantity',   [self::class, 'sync_wc_to_hcm'], 20);
-        add_action('woocommerce_applied_coupon',           [self::class, 'sync_wc_to_hcm'], 20);
-        add_action('woocommerce_removed_coupon',           [self::class, 'sync_wc_to_hcm'], 20);
+        // Sync WooCommerce Cart -> BFS when anything changes on the frontend
+        add_action('woocommerce_add_to_cart',              [self::class, 'sync_wc_to_bfs'], 20);
+        add_action('woocommerce_cart_item_removed',        [self::class, 'sync_wc_to_bfs'], 20);
+        add_action('woocommerce_cart_item_restored',       [self::class, 'sync_wc_to_bfs'], 20);
+        add_action('woocommerce_cart_item_set_quantity',   [self::class, 'sync_wc_to_bfs'], 20);
+        add_action('woocommerce_applied_coupon',           [self::class, 'sync_wc_to_bfs'], 20);
+        add_action('woocommerce_removed_coupon',           [self::class, 'sync_wc_to_bfs'], 20);
     }
 
     /**
-     * Pull data from HCM table and push to WooCommerce native cart.
+     * Pull data from BFS table and push to WooCommerce native cart.
      */
-    public static function sync_hcm_to_wc(): void {
+    public static function sync_bfs_to_wc(): void {
         if (self::$is_syncing || !is_user_logged_in() || is_admin() || wp_doing_ajax() || defined('REST_REQUEST')) {
             return;
         }
@@ -42,23 +42,23 @@ class HCM_Sync {
         self::$is_syncing = true;
 
         $user_id   = get_current_user_id();
-        $cart_ctrl = new HCM_Cart();
-        $hcm_cart  = $cart_ctrl->get_by_key("user_{$user_id}");
+        $cart_ctrl = new BFS_Cart_API();
+        $bfs_cart  = $cart_ctrl->get_by_key("user_{$user_id}");
 
-        if ($hcm_cart) {
+        if ($bfs_cart) {
             $wc_cart = WC()->cart;
             
             // 1. Sync Items (Add/Update and Remove missing)
-            $hcm_item_ids = []; // Store WC cart item keys that should exist
+            $bfs_item_ids = []; // Store WC cart item keys that should exist
             
-            if (!empty($hcm_cart['items'])) {
-                foreach ($hcm_cart['items'] as $item) {
+            if (!empty($bfs_cart['items'])) {
+                foreach ($bfs_cart['items'] as $item) {
                     $product_id   = (int) $item['product_id'];
                     $variation_id = (int) ($item['variation_id'] ?? 0);
                     $quantity     = (int) $item['quantity'];
                     $variation    = (array) ($item['variation'] ?? []);
 
-                    // Fallback for variations missing their attribute data in the HCM table
+                    // Fallback for variations missing their attribute data in the BFS table
                     if ($variation_id > 0 && empty($variation)) {
                         $v_obj = wc_get_product($variation_id);
                         if ($v_obj && $v_obj->is_type('variation')) {
@@ -68,7 +68,7 @@ class HCM_Sync {
 
                     $cart_id = $wc_cart->generate_cart_id($product_id, $variation_id, $variation);
                     $found   = $wc_cart->find_product_in_cart($cart_id);
-                    $hcm_item_ids[] = $found ?: $cart_id;
+                    $bfs_item_ids[] = $found ?: $cart_id;
 
                     if ($found) {
                         if ($wc_cart->get_cart()[$found]['quantity'] !== $quantity) {
@@ -80,24 +80,24 @@ class HCM_Sync {
                 }
             }
 
-            // Remove items from WC that are not in HCM
+            // Remove items from WC that are not in BFS
             foreach ($wc_cart->get_cart() as $cart_item_key => $values) {
-                if (!in_array($cart_item_key, $hcm_item_ids, true)) {
+                if (!in_array($cart_item_key, $bfs_item_ids, true)) {
                     $wc_cart->remove_cart_item($cart_item_key);
                 }
             }
 
             // 2. Sync Coupons (Add and Remove missing)
-            $hcm_coupon_codes = array_keys($hcm_cart['coupons'] ?? []);
-            foreach ($hcm_coupon_codes as $code) {
+            $bfs_coupon_codes = array_keys($bfs_cart['coupons'] ?? []);
+            foreach ($bfs_coupon_codes as $code) {
                 if (!$wc_cart->has_discount($code)) {
                     $wc_cart->apply_coupon($code);
                 }
             }
 
-            // Remove coupons that are not in HCM
+            // Remove coupons that are not in BFS
             foreach ($wc_cart->get_applied_coupons() as $code) {
-                if (!in_array($code, $hcm_coupon_codes, true)) {
+                if (!in_array($code, $bfs_coupon_codes, true)) {
                     $wc_cart->remove_coupon($code);
                 }
             }
@@ -109,30 +109,30 @@ class HCM_Sync {
     /**
      * Apply custom Headless Cart fees to the native WooCommerce cart.
      */
-    public static function apply_hcm_fees_to_wc(\WC_Cart $wc_cart): void {
+    public static function apply_bfs_fees_to_wc(\WC_Cart $wc_cart): void {
         if (!is_user_logged_in() || (is_admin() && !defined('DOING_AJAX'))) {
             return;
         }
 
         $user_id   = get_current_user_id();
-        $cart_ctrl = new HCM_Cart();
-        $hcm_cart  = $cart_ctrl->get_by_key("user_{$user_id}");
+        $cart_ctrl = new BFS_Cart_API();
+        $bfs_cart  = $cart_ctrl->get_by_key("user_{$user_id}");
 
-        if (!empty($hcm_cart['fees'])) {
-            foreach ($hcm_cart['fees'] as $fee) {
+        if (!empty($bfs_cart['fees'])) {
+            foreach ($bfs_cart['fees'] as $fee) {
                 $amount  = (float) ($fee['amount'] ?? 0);
                 $taxable = !empty($fee['taxable']);
                 if ($amount !== 0.0) {
-                    $wc_cart->add_fee($fee['name'] ?? __('Fee', 'hcm'), $amount, $taxable);
+                    $wc_cart->add_fee($fee['name'] ?? __('Fee', 'bfs-app-api'), $amount, $taxable);
                 }
             }
         }
     }
 
     /**
-     * Push data from WooCommerce native cart to HCM table.
+     * Push data from WooCommerce native cart to BFS table.
      */
-    public static function sync_wc_to_hcm(): void {
+    public static function sync_wc_to_bfs(): void {
         if (self::$is_syncing || !is_user_logged_in() || is_admin()) {
             return;
         }
@@ -150,7 +150,7 @@ class HCM_Sync {
         // Ensure totals are calculated before extracting discount amounts
         $wc_cart->calculate_totals();
 
-        $cart_ctrl = new HCM_Cart();
+        $cart_ctrl = new BFS_Cart_API();
 
         // --- Sync Items ---
         $new_items = [];
@@ -183,12 +183,12 @@ class HCM_Sync {
             ];
         }
 
-        // Load existing HCM cart and update items/coupons
-        $hcm_cart = $cart_ctrl->get_by_key("user_{$user_id}") ?? $cart_ctrl->empty_cart();
-        $hcm_cart['items']   = $new_items;
-        $hcm_cart['coupons'] = $new_coupons;
+        // Load existing BFS cart and update items/coupons
+        $bfs_cart = $cart_ctrl->get_by_key("user_{$user_id}") ?? $cart_ctrl->empty_cart();
+        $bfs_cart['items']   = $new_items;
+        $bfs_cart['coupons'] = $new_coupons;
         
-        $cart_ctrl->upsert("user_{$user_id}", $user_id, $hcm_cart);
+        $cart_ctrl->upsert("user_{$user_id}", $user_id, $bfs_cart);
 
         self::$is_syncing = false;
     }

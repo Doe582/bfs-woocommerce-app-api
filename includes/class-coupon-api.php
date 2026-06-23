@@ -2,7 +2,7 @@
 defined('ABSPATH') || exit;
 
 /**
- * Class HCM_Coupon
+ * Class BFS_Coupon_API
  *
  * Full coupon management using WooCommerce's own coupon validation engine.
  * Supports: percent, fixed_cart, fixed_product discount types.
@@ -14,7 +14,7 @@ defined('ABSPATH') || exit;
  *   DELETE /bfsapp/v1/cart/coupon/{code} — remove coupon
  *   GET    /bfsapp/v1/cart/coupons       — list applied coupons
  */
-class HCM_Coupon {
+class BFS_Coupon_API {
 
     public function register_routes(): void {
         $ns = 'bfsapp/v1';
@@ -49,12 +49,12 @@ class HCM_Coupon {
 
     public function apply(\WP_REST_Request $req) {
         $code      = $req->get_param('code');
-        $cart_ctrl = new HCM_Cart();
+        $cart_ctrl = new BFS_Cart_API();
         $cart      = $cart_ctrl->load_session($req);
 
         // Already applied?
         if (isset($cart['coupons'][$code])) {
-            return new \WP_Error('hcm_coupon_duplicate', __('Coupon already applied.', 'hcm'), ['status' => 400]);
+            return new \WP_Error('bfs_coupon_duplicate', __('Coupon already applied.', 'bfs-app-api'), ['status' => 400]);
         }
 
         // Validate coupon via WC
@@ -82,7 +82,7 @@ class HCM_Coupon {
         $cart_ctrl->save_session($req, $cart);
 
         return rest_ensure_response([
-            'message'  => __('Coupon applied successfully.', 'hcm'),
+            'message'  => __('Coupon applied successfully.', 'bfs-app-api'),
             'coupon'   => $cart['coupons'][$code],
             'cart'     => $cart_ctrl->format_cart($cart),
         ]);
@@ -90,24 +90,24 @@ class HCM_Coupon {
 
     public function remove(\WP_REST_Request $req) {
         $code      = strtolower(sanitize_text_field($req->get_param('code')));
-        $cart_ctrl = new HCM_Cart();
+        $cart_ctrl = new BFS_Cart_API();
         $cart      = $cart_ctrl->load_session($req);
 
         if (!isset($cart['coupons'][$code])) {
-            return new \WP_Error('hcm_coupon_not_applied', __('Coupon is not applied to this cart.', 'hcm'), ['status' => 404]);
+            return new \WP_Error('bfs_coupon_not_applied', __('Coupon is not applied to this cart.', 'bfs-app-api'), ['status' => 404]);
         }
 
         unset($cart['coupons'][$code]);
         $cart_ctrl->save_session($req, $cart);
 
         return rest_ensure_response([
-            'message' => __('Coupon removed.', 'hcm'),
+            'message' => __('Coupon removed.', 'bfs-app-api'),
             'cart'    => $cart_ctrl->format_cart($cart),
         ]);
     }
 
     public function list_coupons(\WP_REST_Request $req) {
-        $cart = (new HCM_Cart())->load_session($req);
+        $cart = (new BFS_Cart_API())->load_session($req);
         return rest_ensure_response(array_values($cart['coupons']));
     }
 
@@ -120,19 +120,19 @@ class HCM_Coupon {
     public function validate(\WC_Coupon $coupon, array $cart, int $user_id = 0) {
         // Coupon exists?
         if (!$coupon->get_id()) {
-            return new \WP_Error('hcm_coupon_invalid', __('Coupon code not found.', 'hcm'), ['status' => 400]);
+            return new \WP_Error('bfs_coupon_invalid', __('Coupon code not found.', 'bfs-app-api'), ['status' => 400]);
         }
 
         // Expired?
         $expiry = $coupon->get_date_expires();
         if ($expiry && $expiry->getTimestamp() < time()) {
-            return new \WP_Error('hcm_coupon_expired', __('This coupon has expired.', 'hcm'), ['status' => 400]);
+            return new \WP_Error('bfs_coupon_expired', __('This coupon has expired.', 'bfs-app-api'), ['status' => 400]);
         }
 
         // Global usage limit
         $usage_limit = $coupon->get_usage_limit();
         if ($usage_limit > 0 && $coupon->get_usage_count() >= $usage_limit) {
-            return new \WP_Error('hcm_coupon_exhausted', __('This coupon has reached its usage limit.', 'hcm'), ['status' => 400]);
+            return new \WP_Error('bfs_coupon_exhausted', __('This coupon has reached its usage limit.', 'bfs-app-api'), ['status' => 400]);
         }
 
         // Per-user limit
@@ -142,7 +142,7 @@ class HCM_Coupon {
                 $used_by = $coupon->get_used_by();
                 $count   = count(array_keys($used_by, (string) $user_id, true));
                 if ($count >= $per_user) {
-                    return new \WP_Error('hcm_coupon_user_limit', __('You have already used this coupon.', 'hcm'), ['status' => 400]);
+                    return new \WP_Error('bfs_coupon_user_limit', __('You have already used this coupon.', 'bfs-app-api'), ['status' => 400]);
                 }
             }
         }
@@ -154,27 +154,27 @@ class HCM_Coupon {
 
         if ($min > 0 && $subtotal < $min) {
             return new \WP_Error(
-                'hcm_coupon_min_spend',
-                sprintf(__('Minimum spend of %s required for this coupon.', 'hcm'), wc_price($min)),
+                'bfs_coupon_min_spend',
+                sprintf(__('Minimum spend of %s required for this coupon.', 'bfs-app-api'), wc_price($min)),
                 ['status' => 400]
             );
         }
         if ($max > 0 && $subtotal > $max) {
             return new \WP_Error(
-                'hcm_coupon_max_spend',
-                sprintf(__('Maximum spend of %s allowed for this coupon.', 'hcm'), wc_price($max)),
+                'bfs_coupon_max_spend',
+                sprintf(__('Maximum spend of %s allowed for this coupon.', 'bfs-app-api'), wc_price($max)),
                 ['status' => 400]
             );
         }
 
         // Product/category restrictions
         if (!$this->cart_has_eligible_products($coupon, $cart)) {
-            return new \WP_Error('hcm_coupon_no_eligible_products', __('No products in your cart are eligible for this coupon.', 'hcm'), ['status' => 400]);
+            return new \WP_Error('bfs_coupon_no_eligible_products', __('No products in your cart are eligible for this coupon.', 'bfs-app-api'), ['status' => 400]);
         }
 
         // Excluded products
         if ($this->cart_has_excluded_products($coupon, $cart)) {
-            return new \WP_Error('hcm_coupon_excluded_products', __('Your cart contains products excluded from this coupon.', 'hcm'), ['status' => 400]);
+            return new \WP_Error('bfs_coupon_excluded_products', __('Your cart contains products excluded from this coupon.', 'bfs-app-api'), ['status' => 400]);
         }
 
         return true;
