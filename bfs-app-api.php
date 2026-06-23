@@ -45,12 +45,47 @@ require_once BFS_APP_API_DIR . 'includes/class-rate-limit-api.php';
 // Include the Sync API class.
 require_once BFS_APP_API_DIR . 'includes/class-sync-api.php';
 
+// Include the Install API class.
+require_once BFS_APP_API_DIR . 'includes/class-install-api.php';
+
 // Hook JWT into WordPress authentication
-add_filter('determine_current_user', ['HCM_JWT', 'authenticate'], 20);
-add_filter('rest_authentication_errors', ['HCM_JWT', 'auth_errors']);
+add_filter('determine_current_user', ['BFS_JWT_API', 'authenticate'], 20);
+add_filter('rest_authentication_errors', ['BFS_JWT_API', 'auth_errors']);
 
 // Initialize Sync hooks
-HCM_Sync::init();
+BFS_Sync_API::init();
+
+// Register activation hook
+register_activation_hook(__FILE__, 'bfs_app_api_activate');
+function bfs_app_api_activate() {
+    require_once BFS_APP_API_DIR . 'includes/class-install-api.php';
+    BFS_Install_API::activate();
+}
+
+// Auto-run installer if table or version is missing (self-healing / migration support)
+add_action('plugins_loaded', function() {
+    if (!get_option('bfs_db_version')) {
+        require_once BFS_APP_API_DIR . 'includes/class-install-api.php';
+        BFS_Install_API::activate();
+    }
+}, 5);
+
+// CORS headers for headless REST endpoints
+add_action('rest_api_init', static function () {
+    remove_filter('rest_pre_serve_request', 'rest_send_cors_headers');
+    add_filter('rest_pre_serve_request', static function ($value) {
+        $origin  = $_SERVER['HTTP_ORIGIN'] ?? '*';
+        $allowed = apply_filters('bfs_allowed_origins', apply_filters('bfs_allowed_origins', [$origin]));
+
+        if (in_array($origin, $allowed, true) || in_array('*', $allowed, true)) {
+            header('Access-Control-Allow-Origin: '  . esc_url_raw($origin));
+            header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+            header('Access-Control-Allow-Credentials: true');
+            header('Access-Control-Allow-Headers: Authorization, Content-Type, X-Cart-Key');
+        }
+        return $value;
+    });
+}, 15);
 
 /**
  * Initialize the plugin.
@@ -114,31 +149,31 @@ function bfs_app_api_init()
     $reviews_api->register_routes();
 
     // Register Cart API endpoints.
-    $cart_api = new HCM_Cart();
+    $cart_api = new BFS_Cart_API();
     $cart_api->register_routes();
 
     // Register Coupon API endpoints.
-    $coupon_api = new HCM_Coupon();
+    $coupon_api = new BFS_Coupon_API();
     $coupon_api->register_routes();
 
     // Register Checkout API endpoints.
-    $checkout_api = new HCM_Checkout();
+    $checkout_api = new BFS_Checkout_API();
     $checkout_api->register_routes();
 
     // Register Batch API endpoints.
-    $batch_api = new HCM_Batch();
+    $batch_api = new BFS_Batch_API();
     $batch_api->register_routes();
 
     // Register Shipping API endpoints.
-    $shipping_api = new HCM_Shipping();
+    $shipping_api = new BFS_Shipping_API();
     $shipping_api->register_routes();
 
     // Register Fees API endpoints.
-    $fees_api = new HCM_Fees();
+    $fees_api = new BFS_Fees_API();
     $fees_api->register_routes();
 
     // Register JWT Auth API endpoints.
-    HCM_JWT::register_routes();
+    BFS_JWT_API::register_routes();
 }
 add_action('rest_api_init', 'bfs_app_api_init');
 

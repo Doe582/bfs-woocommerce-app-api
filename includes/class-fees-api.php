@@ -2,7 +2,7 @@
 defined('ABSPATH') || exit;
 
 /**
- * Class HCM_Fees
+ * Class BFS_Fees_API
  *
  * Add/remove custom cart fees (handling, rush, COD charge etc.).
  * Admin-only write endpoints by default (configurable via filter).
@@ -13,11 +13,11 @@ defined('ABSPATH') || exit;
  *   PUT    /bfsapp/v1/cart/fee/{id}   — update a fee
  *   DELETE /bfsapp/v1/cart/fee/{id}   — remove a fee
  */
-class HCM_Fees {
+class BFS_Fees_API {
 
     public function register_routes(): void {
         $ns        = 'bfsapp/v1';
-        $write_perm = apply_filters('hcm_fee_write_permission', [HCM_JWT::class, 'require_auth']);
+        $write_perm = apply_filters('bfs_fee_write_permission', [BFS_JWT_API::class, 'require_auth']);
 
         register_rest_route($ns, '/cart/fees', [
             'methods'             => 'GET',
@@ -50,7 +50,7 @@ class HCM_Fees {
     // ── Endpoints ─────────────────────────────────────────────────────────────
 
     public function list_fees(\WP_REST_Request $req) {
-        $cart = (new HCM_Cart())->load_session($req);
+        $cart = (new BFS_Cart_API())->load_session($req);
         return rest_ensure_response(array_values($cart['fees']));
     }
 
@@ -61,16 +61,16 @@ class HCM_Fees {
         $id      = sanitize_title($name . '-' . uniqid());
 
         if ($amount == 0) {
-            return new \WP_Error('hcm_fee_zero', __('Fee amount cannot be zero.', 'hcm'), ['status' => 400]);
+            return new \WP_Error('bfs_fee_zero', __('Fee amount cannot be zero.', 'bfs-app-api'), ['status' => 400]);
         }
 
-        $cart_ctrl = new HCM_Cart();
+        $cart_ctrl = new BFS_Cart_API();
         $cart      = $cart_ctrl->load_session($req);
 
         // Prevent duplicate name
         foreach ($cart['fees'] as $fee) {
             if (strtolower($fee['name']) === strtolower($name)) {
-                return new \WP_Error('hcm_fee_duplicate', __('A fee with this name already exists.', 'hcm'), ['status' => 400]);
+                return new \WP_Error('bfs_fee_duplicate', __('A fee with this name already exists.', 'bfs-app-api'), ['status' => 400]);
             }
         }
 
@@ -84,7 +84,7 @@ class HCM_Fees {
         $cart_ctrl->save_session($req, $cart);
 
         return rest_ensure_response([
-            'message' => __('Fee added.', 'hcm'),
+            'message' => __('Fee added.', 'bfs-app-api'),
             'fee'     => $cart['fees'][$id],
             'cart'    => $cart_ctrl->format_cart($cart),
         ]);
@@ -92,11 +92,11 @@ class HCM_Fees {
 
     public function update(\WP_REST_Request $req) {
         $id        = sanitize_text_field($req->get_param('id'));
-        $cart_ctrl = new HCM_Cart();
+        $cart_ctrl = new BFS_Cart_API();
         $cart      = $cart_ctrl->load_session($req);
 
         if (!isset($cart['fees'][$id])) {
-            return new \WP_Error('hcm_fee_not_found', __('Fee not found.', 'hcm'), ['status' => 404]);
+            return new \WP_Error('bfs_fee_not_found', __('Fee not found.', 'bfs-app-api'), ['status' => 404]);
         }
 
         if ($req->get_param('name') !== null) {
@@ -112,7 +112,7 @@ class HCM_Fees {
         $cart_ctrl->save_session($req, $cart);
 
         return rest_ensure_response([
-            'message' => __('Fee updated.', 'hcm'),
+            'message' => __('Fee updated.', 'bfs-app-api'),
             'fee'     => $cart['fees'][$id],
             'cart'    => $cart_ctrl->format_cart($cart),
         ]);
@@ -120,11 +120,11 @@ class HCM_Fees {
 
     public function remove(\WP_REST_Request $req) {
         $id        = sanitize_text_field($req->get_param('id'));
-        $cart_ctrl = new HCM_Cart();
+        $cart_ctrl = new BFS_Cart_API();
         $cart      = $cart_ctrl->load_session($req);
 
         if (!isset($cart['fees'][$id])) {
-            return new \WP_Error('hcm_fee_not_found', __('Fee not found.', 'hcm'), ['status' => 404]);
+            return new \WP_Error('bfs_fee_not_found', __('Fee not found.', 'bfs-app-api'), ['status' => 404]);
         }
 
         $removed = $cart['fees'][$id];
@@ -132,7 +132,7 @@ class HCM_Fees {
         $cart_ctrl->save_session($req, $cart);
 
         return rest_ensure_response([
-            'message' => __('Fee removed.', 'hcm'),
+            'message' => __('Fee removed.', 'bfs-app-api'),
             'removed' => $removed,
             'cart'    => $cart_ctrl->format_cart($cart),
         ]);

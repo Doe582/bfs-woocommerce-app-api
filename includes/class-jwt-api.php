@@ -2,7 +2,7 @@
 defined('ABSPATH') || exit;
 
 /**
- * Class HCM_JWT
+ * Class BFS_JWT_API
  *
  * Minimal HS256 JWT implementation — zero external dependencies.
  * Uses WordPress AUTH_KEY as the HMAC secret.
@@ -14,7 +14,7 @@ defined('ABSPATH') || exit;
  *   POST /bfsapp/v1/auth/guest    — get guest cart_key
  *   POST /bfsapp/v1/auth/refresh  — refresh expiring token
  */
-class HCM_JWT {
+class BFS_JWT_API {
 
     // ── Low-level JWT ──────────────────────────────────────────────────────────
 
@@ -29,7 +29,7 @@ class HCM_JWT {
     private static function secret(): string {
         return defined('AUTH_KEY') && strlen(AUTH_KEY) > 12
             ? AUTH_KEY
-            : 'hcm-insecure-default-please-set-auth-key-in-wp-config';
+            : 'bfs-insecure-default-please-set-auth-key-in-wp-config';
     }
 
     /** Encode a payload array into a signed JWT string */
@@ -63,7 +63,7 @@ class HCM_JWT {
     /** Generate a full token response for a WP user */
     public static function generate(int $user_id): array {
         $user = get_user_by('id', $user_id);
-        $ttl  = (int) apply_filters('hcm_token_ttl', 30 * DAY_IN_SECONDS);
+        $ttl  = (int) apply_filters('bfs_token_ttl', 30 * DAY_IN_SECONDS);
         $exp  = time() + $ttl;
 
         $token = self::encode([
@@ -190,21 +190,21 @@ class HCM_JWT {
 
         if (is_wp_error($user)) {
             return new \WP_Error(
-                'hcm_invalid_credentials',
-                __('Invalid username or password.', 'hcm'),
+                'bfs_invalid_credentials',
+                __('Invalid username or password.', 'bfs-app-api'),
                 ['status' => 401]
             );
         }
 
-        do_action('hcm_user_logged_in', $user->ID);
+        do_action('bfs_user_logged_in', $user->ID);
         return rest_ensure_response(self::generate($user->ID));
     }
 
     public static function register(\WP_REST_Request $req) {
         if (!get_option('users_can_register')) {
             return new \WP_Error(
-                'hcm_registration_disabled',
-                __('User registration is disabled.', 'hcm'),
+                'bfs_registration_disabled',
+                __('User registration is disabled.', 'bfs-app-api'),
                 ['status' => 403]
             );
         }
@@ -257,8 +257,8 @@ class HCM_JWT {
     public static function require_auth() {
         if (is_user_logged_in()) return true;
         return new \WP_Error(
-            'hcm_unauthorized',
-            __('Authentication required. Send Bearer token in Authorization header.', 'hcm'),
+            'bfs_unauthorized',
+            __('Authentication required. Send Bearer token in Authorization header.', 'bfs-app-api'),
             ['status' => 401]
         );
     }
@@ -266,8 +266,8 @@ class HCM_JWT {
     public static function require_admin() {
         if (current_user_can('manage_woocommerce')) return true;
         return new \WP_Error(
-            'hcm_forbidden',
-            __('Admin access required.', 'hcm'),
+            'bfs_forbidden',
+            __('Admin access required.', 'bfs-app-api'),
             ['status' => 403]
         );
     }

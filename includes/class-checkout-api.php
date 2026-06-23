@@ -2,7 +2,7 @@
 defined('ABSPATH') || exit;
 
 /**
- * Class HCM_Checkout
+ * Class BFS_Checkout_API
  *
  * Converts the headless cart into a real WooCommerce order.
  * Supports all WC payment gateways, billing/shipping addresses,
@@ -14,7 +14,7 @@ defined('ABSPATH') || exit;
  *   GET  /bfsapp/v1/order/{id}               — order details (authenticated owner)
  *   GET  /bfsapp/v1/orders                   — order history (authenticated)
  */
-class HCM_Checkout {
+class BFS_Checkout_API {
 
     public function register_routes(): void {
         $ns = 'bfsapp/v1';
@@ -35,13 +35,13 @@ class HCM_Checkout {
         register_rest_route($ns, '/order/(?P<id>\d+)', [
             'methods'             => 'GET',
             'callback'            => [$this, 'get_order'],
-            'permission_callback' => [HCM_JWT::class, 'require_auth'],
+            'permission_callback' => [BFS_JWT_API::class, 'require_auth'],
         ]);
 
         register_rest_route($ns, '/orders', [
             'methods'             => 'GET',
             'callback'            => [$this, 'get_orders'],
-            'permission_callback' => [HCM_JWT::class, 'require_auth'],
+            'permission_callback' => [BFS_JWT_API::class, 'require_auth'],
             'args' => [
                 'page'     => ['type' => 'integer', 'default' => 1],
                 'per_page' => ['type' => 'integer', 'default' => 10],
@@ -72,14 +72,14 @@ class HCM_Checkout {
     }
 
     public function place_order(\WP_REST_Request $req) {
-        HCM_RateLimit::check($req, 'checkout');
+        BFS_RateLimit_API::check($req, 'checkout');
 
-        $cart_ctrl = new HCM_Cart();
+        $cart_ctrl = new BFS_Cart_API();
         $cart      = $cart_ctrl->load_session($req);
 
         // Validate cart is not empty
         if (empty($cart['items'])) {
-            return new \WP_Error('hcm_empty_cart', __('Your cart is empty.', 'hcm'), ['status' => 400]);
+            return new \WP_Error('bfs_empty_cart', __('Your cart is empty.', 'bfs-app-api'), ['status' => 400]);
         }
 
         $billing        = (array) ($req->get_param('billing')  ?? []);
@@ -97,8 +97,8 @@ class HCM_Checkout {
         $gateways = WC()->payment_gateways()->get_available_payment_gateways();
         if (!isset($gateways[$payment_method])) {
             return new \WP_Error(
-                'hcm_invalid_payment',
-                __('Selected payment method is not available.', 'hcm'),
+                'bfs_invalid_payment',
+                __('Selected payment method is not available.', 'bfs-app-api'),
                 ['status' => 400]
             );
         }
@@ -106,7 +106,7 @@ class HCM_Checkout {
         // ── Create the order ─────────────────────────────────────────────────
         $order = wc_create_order([
             'customer_id' => is_user_logged_in() ? get_current_user_id() : 0,
-            'status'      => apply_filters('hcm_initial_order_status', 'pending'),
+            'status'      => apply_filters('bfs_initial_order_status', 'pending'),
         ]);
 
         if (is_wp_error($order)) {
@@ -177,7 +177,7 @@ class HCM_Checkout {
         $order->calculate_totals();
         $order->save();
 
-        do_action('hcm_order_created', $order, $cart);
+        do_action('bfs_order_created', $order, $cart);
 
         // Clear cart
         $cart_ctrl->save_session($req, $cart_ctrl->empty_cart());
@@ -211,12 +211,12 @@ class HCM_Checkout {
         $order    = wc_get_order($order_id);
 
         if (!$order) {
-            return new \WP_Error('hcm_order_not_found', __('Order not found.', 'hcm'), ['status' => 404]);
+            return new \WP_Error('bfs_order_not_found', __('Order not found.', 'bfs-app-api'), ['status' => 404]);
         }
 
         // Ensure user owns this order
         if ($order->get_customer_id() !== get_current_user_id() && !current_user_can('manage_woocommerce')) {
-            return new \WP_Error('hcm_order_forbidden', __('You cannot access this order.', 'hcm'), ['status' => 403]);
+            return new \WP_Error('bfs_order_forbidden', __('You cannot access this order.', 'bfs-app-api'), ['status' => 403]);
         }
 
         return rest_ensure_response($this->format_order($order));
@@ -298,15 +298,15 @@ class HCM_Checkout {
         foreach ($required as $field => $label) {
             if (empty($billing[$field])) {
                 return new \WP_Error(
-                    'hcm_missing_billing_' . $field,
-                    sprintf(__('Billing %s is required.', 'hcm'), $label),
+                    'bfs_missing_billing_' . $field,
+                    sprintf(__('Billing %s is required.', 'bfs-app-api'), $label),
                     ['status' => 400]
                 );
             }
         }
 
         if (!is_email($billing['email'])) {
-            return new \WP_Error('hcm_invalid_email', __('Invalid billing email address.', 'hcm'), ['status' => 400]);
+            return new \WP_Error('bfs_invalid_email', __('Invalid billing email address.', 'bfs-app-api'), ['status' => 400]);
         }
 
         return true;
