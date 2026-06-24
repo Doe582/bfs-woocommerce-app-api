@@ -113,7 +113,10 @@ class BFS_Header_API {
 
         // 8. Wishlist Count
         $wishlist_count = 0;
-        if ( function_exists( 'yith_wcwl_count_all_products' ) ) {
+        if ( class_exists( 'BFS_Wishlist_API' ) ) {
+            $wishlist_api = new BFS_Wishlist_API();
+            $wishlist_count = $wishlist_api->get_wishlist_count( $request );
+        } elseif ( function_exists( 'yith_wcwl_count_all_products' ) ) {
             // Get count for YITH WooCommerce Wishlist
             $wishlist_count = yith_wcwl_count_all_products();
         } elseif ( class_exists( 'TInvWL_Public_WishlistCounter' ) ) {

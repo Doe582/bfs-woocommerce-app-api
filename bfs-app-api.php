@@ -51,12 +51,20 @@ require_once BFS_APP_API_DIR . 'includes/class-install-api.php';
 // Include the Products API class.
 require_once BFS_APP_API_DIR . 'includes/class-products-api.php';
 
+// Include the Wishlist API class.
+require_once BFS_APP_API_DIR . 'includes/class-wishlist-api.php';
+
 // Hook JWT into WordPress authentication
 add_filter('determine_current_user', ['BFS_JWT_API', 'authenticate'], 20);
 add_filter('rest_authentication_errors', ['BFS_JWT_API', 'auth_errors']);
 
 // Initialize Sync hooks
 BFS_Sync_API::init();
+
+// Include and initialize Wishlist Web Integration
+require_once BFS_APP_API_DIR . 'includes/class-wishlist-web.php';
+$wishlist_web = new BFS_Wishlist_Web();
+$wishlist_web->init();
 
 // Register activation hook
 register_activation_hook(__FILE__, 'bfs_app_api_activate');
@@ -67,8 +75,8 @@ function bfs_app_api_activate() {
 
 // Auto-run installer if table or version is missing (self-healing / migration support)
 add_action('plugins_loaded', function() {
-    if (!get_option('bfs_db_version')) {
-        require_once BFS_APP_API_DIR . 'includes/class-install-api.php';
+    require_once BFS_APP_API_DIR . 'includes/class-install-api.php';
+    if (get_option('bfs_db_version') !== BFS_Install_API::DB_VER) {
         BFS_Install_API::activate();
     }
 }, 5);
@@ -174,6 +182,10 @@ function bfs_app_api_init()
     // Register Products API endpoints.
     $products_api = new BFS_Products_API();
     $products_api->register_routes();
+
+    // Register Wishlist API endpoints.
+    $wishlist_api = new BFS_Wishlist_API();
+    $wishlist_api->register_routes();
 }
 add_action('rest_api_init', 'bfs_app_api_init');
 

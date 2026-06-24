@@ -1,0 +1,241 @@
+/* --- Frontend Wishlist Buttons --- */
+
+/* Loop wishlist button (shop catalog) */
+.product .bfs-loop-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    z-index: 10;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: none;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    opacity: 0; /* hidden by default, shown on hover */
+    visibility: hidden;
+    color: #888888;
+}
+
+.product:hover .bfs-loop-btn {
+    opacity: 1;
+    visibility: visible;
+}
+
+.bfs-loop-btn:hover {
+    transform: scale(1.1);
+    color: #e22d2d;
+    background: #ffffff;
+}
+
+.bfs-loop-btn.active {
+    color: #e22d2d;
+}
+
+/* Single product wishlist button */
+.bfs-single-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 45px;
+    height: 45px;
+    border-radius: 4px;
+    border: 1px solid #dddddd;
+    background: #ffffff;
+    color: #666666;
+    cursor: pointer;
+    margin-left: 10px;
+    vertical-align: middle;
+    transition: all 0.3s ease;
+}
+
+.bfs-single-btn:hover {
+    color: #e22d2d;
+    border-color: #e22d2d;
+    background: #fffcfc;
+}
+
+.bfs-single-btn.active {
+    color: #e22d2d;
+    border-color: #e22d2d;
+}
+
+/* --- Shared Button Icon & Loading --- */
+.bfs-wishlist-btn svg {
+    transition: fill 0.3s ease, transform 0.3s ease;
+}
+
+.bfs-wishlist-btn.active svg {
+    fill: #e22d2d;
+}
+
+.bfs-wishlist-btn.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.bfs-wishlist-btn.loading svg {
+    animation: bfs-pulse 1s infinite alternate;
+}
+
+@keyframes bfs-pulse {
+    0% { transform: scale(0.9); }
+    100% { transform: scale(1.1); }
+}
+
+/* --- Header Wishlist Badge --- */
+.site-header__actions-right .wishlist-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    overflow: visible !important;
+}
+
+.site-header__actions-right .wishlist-btn .wishlist-count {
+    position: absolute;
+    top: -5px;
+    right: -8px;
+    background-color: #e22d2d;
+    color: #ffffff;
+    font-size: 9px;
+    font-weight: 700;
+    min-width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 3px;
+    line-height: 1;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    z-index: 15;
+}
+
+/* --- Shortcode Wishlist Page --- */
+.bfs-wishlist-empty {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.bfs-wishlist-empty p {
+    font-size: 18px;
+    margin-bottom: 20px;
+    color: #666666;
+}
+
+.bfs-wishlist-container {
+    margin: 30px 0;
+}
+
+.bfs-wishlist-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 30px;
+}
+
+.bfs-wishlist-table th, 
+.bfs-wishlist-table td {
+    padding: 15px;
+    vertical-align: middle;
+    border-bottom: 1px solid #eeeeee;
+}
+
+.bfs-wishlist-table th {
+    text-align: left;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 13px;
+    color: #333333;
+    border-bottom: 2px solid #dddddd;
+}
+
+.bfs-wishlist-table td.product-remove {
+    width: 50px;
+}
+
+.bfs-wishlist-table td.product-remove a.bfs-wishlist-remove {
+    font-size: 24px;
+    color: #cccccc;
+    text-decoration: none;
+    transition: color 0.3s ease;
+    display: inline-block;
+    line-height: 1;
+}
+
+.bfs-wishlist-table td.product-remove a.bfs-wishlist-remove:hover {
+    color: #e22d2d;
+}
+
+.bfs-wishlist-table td.product-thumbnail img {
+    max-width: 80px;
+    height: auto;
+    border-radius: 4px;
+}
+
+.bfs-wishlist-table td.product-name a {
+    font-weight: 600;
+    color: #333333;
+    text-decoration: none;
+}
+
+.bfs-wishlist-table td.product-name a:hover {
+    color: #e22d2d;
+}
+
+.bfs-wishlist-table td.product-price span.woocommerce-Price-amount {
+    font-weight: bold;
+}
+
+.bfs-wishlist-table td.product-stock-status span.wishlist-in-stock.instock {
+    color: #7ad03a;
+    font-weight: 600;
+}
+
+.bfs-wishlist-table td.product-stock-status span.wishlist-in-stock.outofstock {
+    color: #e2401c;
+    font-weight: 600;
+}
+
+.bfs-wishlist-table td.product-add-to-cart .button {
+    font-size: 12px;
+    padding: 8px 16px;
+    text-transform: uppercase;
+    font-weight: bold;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+/* Spinner for removal link */
+.bfs-wishlist-remove.loading {
+    animation: bfs-spin 1s infinite linear;
+    pointer-events: none;
+    color: #e22d2d !important;
+}
+
+@keyframes bfs-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Make loop button visible on mobile screens since there is no hover */
+@media (max-width: 768px) {
+    .product .bfs-loop-btn {
+        opacity: 1;
+        visibility: visible;
+        width: 32px;
+        height: 32px;
+        top: 10px;
+        right: 10px;
+    }
+    
+    .product .bfs-loop-btn svg {
+        width: 16px;
+        height: 16px;
+    }
+}

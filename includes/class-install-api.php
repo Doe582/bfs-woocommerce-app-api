@@ -14,7 +14,7 @@ defined('ABSPATH') || exit;
 class BFS_Install_API {
 
     const DB_VER_KEY = 'bfs_db_version';
-    const DB_VER     = '1.0';
+    const DB_VER     = '1.1';
 
     public static function activate(): void {
         self::create_tables();
@@ -26,7 +26,7 @@ class BFS_Install_API {
         global $wpdb;
         $charset = $wpdb->get_charset_collate();
 
-        $sql = "CREATE TABLE IF NOT EXISTS {$wpdb->prefix}bfs_carts (
+        $sql_carts = "CREATE TABLE IF NOT EXISTS {$wpdb->prefix}bfs_carts (
             id         BIGINT UNSIGNED  NOT NULL AUTO_INCREMENT,
             cart_key   VARCHAR(64)      NOT NULL COMMENT 'user_{id} or guest_{uuid}',
             user_id    BIGINT UNSIGNED  NOT NULL DEFAULT 0,
@@ -40,8 +40,23 @@ class BFS_Install_API {
             KEY         idx_expires  (expires_at)
         ) $charset;";
 
+        $sql_wishlists = "CREATE TABLE IF NOT EXISTS {$wpdb->prefix}bfs_wishlists (
+            id           BIGINT UNSIGNED  NOT NULL AUTO_INCREMENT,
+            wishlist_key VARCHAR(64)      NOT NULL COMMENT 'user_{id} or guest_{uuid}',
+            user_id      BIGINT UNSIGNED  NOT NULL DEFAULT 0,
+            items        LONGTEXT         NOT NULL COMMENT 'JSON array of product IDs',
+            expires_at   DATETIME         NOT NULL,
+            created_at   DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at   DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            UNIQUE KEY  uq_wishlist_key  (wishlist_key),
+            KEY         idx_user_id      (user_id),
+            KEY         idx_expires      (expires_at)
+        ) $charset;";
+
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-        dbDelta($sql);
+        dbDelta($sql_carts);
+        dbDelta($sql_wishlists);
     }
 
     /** Remove expired carts daily */
