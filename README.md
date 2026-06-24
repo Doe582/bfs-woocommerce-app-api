@@ -902,6 +902,92 @@ Authorization: Bearer <token>
 
 ---
 
+## Product API
+
+---
+
+### GET /bfsapp/v1/products
+
+**List products with pagination, sorting, search, and filters.**
+
+- **Parameters:**
+  - `page` (optional, default: 1)
+  - `per_page` (optional, default: 10)
+  - `orderby` (optional, choices: `date`, `price`, `popularity`, `rating`, `title`, default: `date`)
+  - `order` (optional, choices: `asc`, `desc`, default: `desc`)
+  - `search` (optional, string)
+  - `category` (optional, string/slug)
+  - `tag` (optional, string/slug)
+  - `featured` (optional, boolean)
+  - `on_sale` (optional, boolean)
+  - `min_price` (optional, float)
+  - `max_price` (optional, float)
+
+```json
+// Response
+{
+  "success": true,
+  "data": [
+    {
+      "id": 157,
+      "name": "multi rehenga",
+      "slug": "multi-rehenga",
+      "permalink": "http://localhost:8888/styluza/product/multi-rehenga/",
+      "type": "variable",
+      "status": "publish",
+      "featured": true,
+      "description": "...",
+      "short_description": "...",
+      "sku": "woo-fashion",
+      "price": "4000.00",
+      "regular_price": "",
+      "sale_price": "",
+      "on_sale": true,
+      "in_stock": true,
+      "stock_quantity": null,
+      "stock_status": "instock",
+      "images": [
+        {
+          "id": 81,
+          "src": "http://localhost:8888/styluza/wp-content/uploads/2026/05/Feature-Products-lehanga-scaled-1.webp",
+          "alt": "multi rehenga"
+        }
+      ],
+      "categories": [
+        {
+          "id": 34,
+          "name": "Sarees",
+          "slug": "sarees"
+        }
+      ],
+      "tags": [],
+      "attributes": [],
+      "variations": []
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "per_page": 10,
+    "total": 6,
+    "total_pages": 1
+  }
+}
+```
+
+---
+
+### GET /bfsapp/v1/products/{id}
+
+**Fetch a product by its ID.**
+
+---
+
+### GET /bfsapp/v1/products/{slug}
+
+**Fetch a product by its slug.**
+
+---
+
 ## Guest Cart Flow
 
 ```
@@ -1113,3 +1199,6 @@ add_filter('bfs_allowed_origins', fn() => ['https://yourfrontend.com', 'http://l
 | GET | `/bfsapp/v1/instagram-feed` | — | Get Instagram posts |
 | GET | `/bfsapp/v1/reviews` | — | Get product reviews |
 | POST | `/bfsapp/v1/reviews` | — | Submit product review |
+| GET | `/bfsapp/v1/products` | — | List products with pagination/filters |
+| GET | `/bfsapp/v1/products/{id}` | — | Get product by ID |
+| GET | `/bfsapp/v1/products/{slug}` | — | Get product by slug |
