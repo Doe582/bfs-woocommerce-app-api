@@ -988,6 +988,99 @@ Authorization: Bearer <token>
 
 ---
 
+
+---
+
+## Wishlist API
+
+---
+
+### GET /bfsapp/v1/wishlist
+
+**Get wishlist items.**
+
+- **Headers/Parameters (optional):**
+  - `X-Wishlist-Key` or `X-Cart-Key` (header)
+  - `wishlist_key` or `cart_key` (query parameter)
+
+```json
+// Response
+{
+  "success": true,
+  "data": [
+    {
+      "id": 157,
+      "name": "multi rehenga",
+      "slug": "multi-rehenga",
+      "permalink": "http://localhost:8888/styluza/product/multi-rehenga/",
+      "price": "4000.00",
+      "regular_price": "",
+      "sale_price": "",
+      "on_sale": true,
+      "in_stock": true,
+      "stock_status": "instock",
+      "image": "http://localhost:8888/styluza/wp-content/uploads/2026/05/Feature-Products-lehanga-scaled-1-300x300.webp"
+    }
+  ]
+}
+```
+
+---
+
+### POST /bfsapp/v1/wishlist/add
+
+**Add a product to the wishlist.**
+
+- **Parameters (body):**
+  - `product_id` (required, int)
+  - `wishlist_key` or `cart_key` (optional, string for guests)
+
+```json
+// Response
+{
+  "success": true,
+  "message": "Product added to wishlist.",
+  "data": [ /* updated wishlist items */ ]
+}
+```
+
+---
+
+### DELETE /bfsapp/v1/wishlist/remove
+
+**Remove a product from the wishlist.**
+
+- **Parameters (body):**
+  - `product_id` (required, int)
+  - `wishlist_key` or `cart_key` (optional, string for guests)
+
+```json
+// Response
+{
+  "success": true,
+  "message": "Product removed from wishlist.",
+  "data": [ /* updated wishlist items */ ]
+}
+```
+
+---
+
+### DELETE /bfsapp/v1/wishlist/clear
+
+**Clear all wishlist items.**
+
+---
+
+### POST /bfsapp/v1/wishlist/transfer
+*Requires: JWT Token*
+
+**Transfer guest wishlist items to the logged-in user.**
+
+- **Parameters (body):**
+  - `wishlist_key` (required, string)
+
+---
+
 ## Guest Cart Flow
 
 ```
@@ -1202,3 +1295,9 @@ add_filter('bfs_allowed_origins', fn() => ['https://yourfrontend.com', 'http://l
 | GET | `/bfsapp/v1/products` | — | List products with pagination/filters |
 | GET | `/bfsapp/v1/products/{id}` | — | Get product by ID |
 | GET | `/bfsapp/v1/products/{slug}` | — | Get product by slug |
+| GET | `/bfsapp/v1/wishlist` | JWT/Key | Get wishlist items |
+| POST | `/bfsapp/v1/wishlist/add` | JWT/Key | Add item to wishlist |
+| DELETE | `/bfsapp/v1/wishlist/remove` | JWT/Key | Remove item from wishlist |
+| DELETE | `/bfsapp/v1/wishlist/clear` | JWT/Key | Clear wishlist |
+| POST | `/bfsapp/v1/wishlist/transfer` | JWT | Merge guest→user wishlist |
+
