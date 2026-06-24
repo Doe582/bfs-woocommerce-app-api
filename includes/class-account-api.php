@@ -17,95 +17,18 @@ class BFS_Account_API
         $version = '1';
         $namespace = 'bfsapp/v' . $version;
 
-        // Account Endpoint
-        register_rest_route($namespace, '/account', array(
-            array(
-                'methods'             => WP_REST_Server::READABLE,
-                'callback'            => array($this, 'get_account'),
-                'permission_callback' => array($this, 'check_permission'),
-            ),
-        ));
-
         // Account Details Endpoint
         register_rest_route($namespace, '/account-details', array(
             array(
                 'methods'             => WP_REST_Server::READABLE,
                 'callback'            => array($this, 'get_account_details'),
-                'permission_callback' => array($this, 'check_permission'),
+                'permission_callback' => array('BFS_JWT_API', 'require_auth'),
             ),
             array(
                 'methods'             => WP_REST_Server::CREATABLE,
                 'callback'            => array($this, 'update_account_details'),
-                'permission_callback' => array($this, 'check_permission'),
+                'permission_callback' => array('BFS_JWT_API', 'require_auth'),
             ),
-        ));
-    }
-
-    /**
-     * Check if a given request has access.
-     */
-    public function check_permission($request)
-    {
-        // TEMPORARY BYPASS FOR POSTMAN TESTING: Allow access if ?test_user_id=X is passed
-        if (isset($_GET['test_user_id']) && is_numeric($_GET['test_user_id'])) {
-            return true;
-        }
-
-        // Second fallback bypass to make it easy to test
-        if (!is_user_logged_in() && !isset($_GET['test_user_id'])) {
-             // Let them pass to show the JSON (we will mock user ID 1 in the callbacks)
-             // TODO: Remove this bypass before production!
-             return true;
-        }
-
-        return true;
-    }
-
-    /**
-     * Helper to retrieve the active user ID securely, or safely mock it for Postman testing.
-     */
-    private function get_target_user_id() {
-        if (isset($_GET['test_user_id']) && is_numeric($_GET['test_user_id'])) {
-            return (int) $_GET['test_user_id'];
-        }
-        
-        $user_id = get_current_user_id();
-        
-        // Mock Admin ID for easy Postman testing if completely unauthenticated
-        if ($user_id === 0) {
-            return 1; 
-        }
-        
-        return $user_id;
-    }
-
-    /**
-     * Get basic account info.
-     */
-    public function get_account($request)
-    {
-        $user_id = $this->get_target_user_id();
-        $user = get_userdata($user_id);
-
-        if (!$user) {
-            return new WP_Error('not_found', esc_html__('User not found.', 'bfs-app-api'), array('status' => 404));
-        }
-
-        $name = trim($user->first_name . ' ' . $user->last_name);
-        if (empty($name)) {
-            $name = $user->display_name;
-        }
-
-        $data = array(
-            'id'     => $user->ID,
-            'name'   => $name,
-            'email'  => $user->user_email,
-            'avatar' => get_avatar_url($user->ID)
-        );
-
-        return rest_ensure_response(array(
-            'success' => true,
-            'data'    => $data,
         ));
     }
 
@@ -114,7 +37,7 @@ class BFS_Account_API
      */
     public function get_account_details($request)
     {
-        $user_id = $this->get_target_user_id();
+        $user_id = get_current_user_id();
         $user = get_userdata($user_id);
 
         if (!$user) {
@@ -145,7 +68,7 @@ class BFS_Account_API
      */
     public function update_account_details($request)
     {
-        $user_id = $this->get_target_user_id();
+        $user_id = get_current_user_id();
         $user = get_userdata($user_id);
 
         if (!$user) {

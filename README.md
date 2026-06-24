@@ -601,9 +601,14 @@ Process multiple operations in **one HTTP request** to reduce network latency.
 ---
 
 ### GET /bfsapp/v1/addresses
-*Requires: JWT Token (Or `test_user_id` parameter for mock test)*
+*Requires: JWT Token*
 
 **Get a list of addresses (Billing, Shipping, and custom address book entries) for the user.**
+
+**Header:**
+```http
+Authorization: Bearer <token>
+```
 
 ```json
 // Response
@@ -648,30 +653,16 @@ Process multiple operations in **one HTTP request** to reduce network latency.
 
 ---
 
-### GET /bfsapp/v1/account
-*Requires: JWT Token*
-
-**Get basic account name, email, avatar.**
-
-```json
-// Response
-{
-  "success": true,
-  "data": {
-    "id": 42,
-    "name": "Rahul Shah",
-    "email": "rahul@example.com",
-    "avatar": "https://secure.gravatar.com/avatar/..."
-  }
-}
-```
-
----
 
 ### GET /bfsapp/v1/account-details
 *Requires: JWT Token*
 
 **Get detailed account profile info.**
+
+**Header:**
+```http
+Authorization: Bearer <token>
+```
 
 ```json
 // Response
@@ -693,6 +684,11 @@ Process multiple operations in **one HTTP request** to reduce network latency.
 *Requires: JWT Token*
 
 **Update user name, email, billing phone, and password securely.**
+
+**Header:**
+```http
+Authorization: Bearer <token>
+```
 
 ```json
 // Request
@@ -1109,7 +1105,6 @@ add_filter('bfs_allowed_origins', fn() => ['https://yourfrontend.com', 'http://l
 | GET | `/bfsapp/v1/orders` | JWT | Order history |
 | POST | `/bfsapp/v1/batch` | JWT/Key | Batch requests |
 | GET | `/bfsapp/v1/addresses` | JWT | User Address list |
-| GET | `/bfsapp/v1/account` | JWT | Get basic account |
 | GET | `/bfsapp/v1/account-details` | JWT | Detailed account details |
 | POST | `/bfsapp/v1/account-details` | JWT | Update account info |
 | GET | `/bfsapp/v1/header` | — | Get header config & links |
