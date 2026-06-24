@@ -120,13 +120,6 @@ function bfs_app_api_init()
     $instagram_feed_api = new BFS_Instagram_Feed_API();
     $instagram_feed_api->register_routes();
 
-    // Include the Orders API class.
-    require_once BFS_APP_API_DIR . 'includes/class-orders-api.php';
-
-    // Instantiate the Orders API class to register endpoints.
-    $orders_api = new BFS_Orders_API();
-    $orders_api->register_routes();
-
     // Include the Account API class.
     require_once BFS_APP_API_DIR . 'includes/class-account-api.php';
 
