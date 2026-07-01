@@ -146,17 +146,27 @@ class BFS_Wishlist_API {
     }
 
     public function transfer_wishlist(\WP_REST_Request $req) {
+        global $wpdb;
+        $table     = $wpdb->prefix . 'bfs_wishlists';
         $guest_key = sanitize_text_field($req->get_param('wishlist_key'));
         $user_id   = get_current_user_id();
+        $user_key  = "user_{$user_id}";
 
-        global $wpdb;
-        $table = $wpdb->prefix . 'bfs_wishlists';
-        $exists = $wpdb->get_var($wpdb->prepare("SELECT id FROM $table WHERE wishlist_key = %s", $guest_key));
-        if (!$exists) {
+        $guest_row = $wpdb->get_row(
+            $wpdb->prepare("SELECT items FROM $table WHERE wishlist_key = %s", $guest_key)
+        );
+
+        if (!$guest_row) {
             return new \WP_Error('bfs_wishlist_not_found', __('Guest wishlist not found.', 'bfs-app-api'), ['status' => 404]);
         }
 
-        $merged_items = $this->merge_guest_to_user($guest_key, $user_id);
+        $guest_items = json_decode($guest_row->items, true) ?: [];
+        $user_items  = $this->get_by_key($user_key) ?: [];
+
+        $merged_items = array_unique(array_merge($user_items, $guest_items));
+
+        $this->upsert($user_key, $user_id, $merged_items);
+        $wpdb->delete($table, ['wishlist_key' => $guest_key]); // clean up guest wishlist
 
         return rest_ensure_response([
             'success' => true,

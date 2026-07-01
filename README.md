@@ -993,15 +993,22 @@ Authorization: Bearer <token>
 
 ## Wishlist API
 
+> [!NOTE]
+> **Guest Session Resolution:** For guest sessions, the wishlist is tracked via a unique guest key (e.g. `guest_uuid` returned from `POST /auth/guest`).
+> * You can send this key in the **header** (`X-Wishlist-Key` or `X-Cart-Key`) or in the **body/query parameters** (`wishlist_key` or `cart_key`).
+> * **IMPORTANT:** Do **NOT** prefix the guest key header with `Bearer ` (e.g., send `guest_6c88e4a2...`, not `Bearer guest_6c88e4a2...`). The `Bearer ` prefix is strictly for the `Authorization` header.
+> * If a valid `Authorization: Bearer <JWT_TOKEN>` header is sent, the API automatically uses the logged-in user's wishlist and ignores the guest key.
+
 ---
 
 ### GET /bfsapp/v1/wishlist
 
 **Get wishlist items.**
 
-- **Headers/Parameters (optional):**
-  - `X-Wishlist-Key` or `X-Cart-Key` (header)
-  - `wishlist_key` or `cart_key` (query parameter)
+- **Headers (optional, for guests):**
+  - `X-Wishlist-Key` or `X-Cart-Key` (Do NOT prefix with `Bearer `)
+- **Parameters (optional query parameters, for guests):**
+  - `wishlist_key` or `cart_key`
 
 ```json
 // Response
@@ -1031,9 +1038,11 @@ Authorization: Bearer <token>
 
 **Add a product to the wishlist.**
 
+- **Headers (optional, for guests):**
+  - `X-Wishlist-Key` or `X-Cart-Key`
 - **Parameters (body):**
   - `product_id` (required, int)
-  - `wishlist_key` or `cart_key` (optional, string for guests)
+  - `wishlist_key` or `cart_key` (optional query/body parameter for guests)
 
 ```json
 // Response
@@ -1050,9 +1059,11 @@ Authorization: Bearer <token>
 
 **Remove a product from the wishlist.**
 
+- **Headers (optional, for guests):**
+  - `X-Wishlist-Key` or `X-Cart-Key`
 - **Parameters (body):**
   - `product_id` (required, int)
-  - `wishlist_key` or `cart_key` (optional, string for guests)
+  - `wishlist_key` or `cart_key` (optional query/body parameter for guests)
 
 ```json
 // Response
@@ -1069,15 +1080,20 @@ Authorization: Bearer <token>
 
 **Clear all wishlist items.**
 
+- **Headers (optional, for guests):**
+  - `X-Wishlist-Key` or `X-Cart-Key`
+
 ---
 
 ### POST /bfsapp/v1/wishlist/transfer
-*Requires: JWT Token*
+*Requires: Authorization: Bearer <JWT_TOKEN> Header*
 
 **Transfer guest wishlist items to the logged-in user.**
 
+- **Headers:**
+  - `Authorization: Bearer <JWT_TOKEN>` (required, string)
 - **Parameters (body):**
-  - `wishlist_key` (required, string)
+  - `wishlist_key` (required, string - the raw guest key, e.g. `guest_6c88e4a2...`, without `Bearer ` prefix)
 
 ---
 
