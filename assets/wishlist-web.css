@@ -1,10 +1,13 @@
 /* --- Frontend Wishlist Buttons --- */
 
 /* Loop wishlist button (shop catalog) */
-.product .bfs-loop-btn {
+.product .bfs-loop-btn,
+.stz-fp-slide .bfs-loop-btn,
+.swiper-slide .bfs-loop-btn {
     position: absolute;
-    top: 15px;
-    right: 15px;
+    top: 50%;
+    right: 0;
+    left: 20px;
     z-index: 10;
     width: 36px;
     height: 36px;
@@ -17,12 +20,14 @@
     justify-content: center;
     cursor: pointer;
     transition: all 0.3s ease;
-    opacity: 0; /* hidden by default, shown on hover */
+    opacity: 0;
     visibility: hidden;
-    color: #888888;
+    color: #e22d2d;
 }
 
-.product:hover .bfs-loop-btn {
+.product:hover .bfs-loop-btn,
+.stz-fp-slide:hover .bfs-loop-btn,
+.swiper-slide:hover .bfs-loop-btn {
     opacity: 1;
     visibility: visible;
 }
@@ -84,8 +89,13 @@
 }
 
 @keyframes bfs-pulse {
-    0% { transform: scale(0.9); }
-    100% { transform: scale(1.1); }
+    0% {
+        transform: scale(0.9);
+    }
+
+    100% {
+        transform: scale(1.1);
+    }
 }
 
 /* --- Header Wishlist Badge --- */
@@ -139,7 +149,7 @@
     margin-bottom: 30px;
 }
 
-.bfs-wishlist-table th, 
+.bfs-wishlist-table th,
 .bfs-wishlist-table td {
     padding: 15px;
     vertical-align: middle;
@@ -219,8 +229,13 @@
 }
 
 @keyframes bfs-spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 /* Make loop button visible on mobile screens since there is no hover */
@@ -233,7 +248,7 @@
         top: 10px;
         right: 10px;
     }
-    
+
     .product .bfs-loop-btn svg {
         width: 16px;
         height: 16px;
