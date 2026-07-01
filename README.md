@@ -717,6 +717,11 @@ Authorization: Bearer <token>
 
 **Get dynamic header config, active menu items, logo, currency metadata, cart, and social configurations.**
 
+*Supports optional JWT Authentication / Guest Headers:*
+- `Authorization: Bearer <JWT_TOKEN>`: Loads the authenticated user's cart item count, subtotal, and wishlist count.
+- `X-Cart-Key`: Guest cart key (header) to load guest-specific cart items count & subtotal when unauthenticated.
+- `X-Wishlist-Key`: Guest wishlist key (header) to load guest-specific wishlist count when unauthenticated.
+
 ```json
 // Response
 {
