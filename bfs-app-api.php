@@ -54,6 +54,9 @@ require_once BFS_APP_API_DIR . 'includes/class-products-api.php';
 // Include the Wishlist API class.
 require_once BFS_APP_API_DIR . 'includes/class-wishlist-api.php';
 
+// Include the Forms API class.
+require_once BFS_APP_API_DIR . 'includes/class-forms-api.php';
+
 // Hook JWT into WordPress authentication
 add_filter('determine_current_user', ['BFS_JWT_API', 'authenticate'], 20);
 add_filter('rest_authentication_errors', ['BFS_JWT_API', 'auth_errors']);
@@ -186,6 +189,10 @@ function bfs_app_api_init()
     // Register Wishlist API endpoints.
     $wishlist_api = new BFS_Wishlist_API();
     $wishlist_api->register_routes();
+
+    // Register Forms API endpoints.
+    $forms_api = new BFS_Forms_API();
+    $forms_api->register_routes();
 }
 add_action('rest_api_init', 'bfs_app_api_init');
 
