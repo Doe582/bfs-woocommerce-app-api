@@ -11,9 +11,11 @@ defined('ABSPATH') || exit;
  *   - [bfs_wishlist] shortcode for wishlist pages
  *   - Static assets enqueuing
  */
-class BFS_Wishlist_Web {
+class BFS_Wishlist_Web
+{
 
-    public function init(): void {
+    public function init(): void
+    {
         // Enqueue styles and scripts
         add_action('wp_enqueue_scripts', [$this, 'enqueue_assets']);
 
@@ -24,8 +26,8 @@ class BFS_Wishlist_Web {
         add_action('wp_login', [$this, 'transfer_guest_wishlist_on_login'], 10, 2);
 
         // Inject wishlist toggle button in product list and detail pages
-        add_action('woocommerce_after_shop_loop_item', [$this, 'render_loop_wishlist_button'], 7);
         add_action('woocommerce_after_add_to_cart_button', [$this, 'render_single_wishlist_button'], 10);
+        add_action('bfs_wishlist_loop_button', [$this, 'render_loop_wishlist_button']);
 
         // Register the shortcode
         add_shortcode('bfs_wishlist', [$this, 'render_wishlist_shortcode']);
@@ -34,7 +36,8 @@ class BFS_Wishlist_Web {
     /**
      * Enqueue CSS & JS assets on the frontend.
      */
-    public function enqueue_assets(): void {
+    public function enqueue_assets(): void
+    {
         wp_enqueue_style(
             'bfs-wishlist-web-css',
             plugins_url('assets/wishlist-web.css', dirname(__FILE__)),
@@ -53,7 +56,7 @@ class BFS_Wishlist_Web {
         // Localize rest api data
         wp_localize_script('bfs-wishlist-web-js', 'bfsWishlistData', [
             'restUrl' => esc_url_raw(rest_url('bfsapp/v1/wishlist')),
-            'nonce'   => wp_create_nonce('wp_rest'),
+            'nonce' => wp_create_nonce('wp_rest'),
             'shopUrl' => esc_url(apply_filters('woocommerce_return_to_shop_redirect', wc_get_page_permalink('shop'))),
         ]);
     }
@@ -61,7 +64,8 @@ class BFS_Wishlist_Web {
     /**
      * Set a unique cookie for guest users to track their wishlist.
      */
-    public function set_guest_cookie(): void {
+    public function set_guest_cookie(): void
+    {
         if (!headers_sent() && !is_user_logged_in() && empty($_COOKIE['bfs_wishlist_key'])) {
             $guest_uuid = 'guest_' . wp_generate_uuid4();
             // Set cookie for 30 days
@@ -81,7 +85,8 @@ class BFS_Wishlist_Web {
     /**
      * Automatically transfer guest wishlist database entries into logged-in user on login.
      */
-    public function transfer_guest_wishlist_on_login(string $user_login, \WP_User $user): void {
+    public function transfer_guest_wishlist_on_login(string $user_login, \WP_User $user): void
+    {
         if (!empty($_COOKIE['bfs_wishlist_key'])) {
             $guest_key = sanitize_text_field(wp_unslash($_COOKIE['bfs_wishlist_key']));
             $wishlist_api = new BFS_Wishlist_API();
@@ -104,9 +109,11 @@ class BFS_Wishlist_Web {
     /**
      * Helper to render the wishlist heart button.
      */
-    private function render_wishlist_button(string $class = ''): void {
+    private function render_wishlist_button(string $class = ''): void
+    {
         global $product;
-        if (!$product) return;
+        if (!$product)
+            return;
 
         $wishlist_api = new BFS_Wishlist_API();
         $items = $wishlist_api->load_session(new \WP_REST_Request());
@@ -130,18 +137,21 @@ class BFS_Wishlist_Web {
         );
     }
 
-    public function render_loop_wishlist_button(): void {
+    public function render_loop_wishlist_button(): void
+    {
         $this->render_wishlist_button('bfs-loop-btn');
     }
 
-    public function render_single_wishlist_button(): void {
+    public function render_single_wishlist_button(): void
+    {
         $this->render_wishlist_button('bfs-single-btn');
     }
 
     /**
      * Shortcode callback to render the wishlist table grid on the web.
      */
-    public function render_wishlist_shortcode(): string {
+    public function render_wishlist_shortcode(): string
+    {
         $wishlist_api = new BFS_Wishlist_API();
         $items = $wishlist_api->load_session(new \WP_REST_Request());
 
@@ -170,7 +180,8 @@ class BFS_Wishlist_Web {
 
         foreach ($items as $product_id) {
             $product = wc_get_product((int) $product_id);
-            if (!$product || $product->get_status() !== 'publish') continue;
+            if (!$product || $product->get_status() !== 'publish')
+                continue;
 
             $image_id = $product->get_image_id();
             $image_url = $image_id ? wp_get_attachment_image_url($image_id, 'woocommerce_thumbnail') : wc_placeholder_img_src();
