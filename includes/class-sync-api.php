@@ -133,7 +133,7 @@ class BFS_Sync_API {
      * Push data from WooCommerce native cart to BFS table.
      */
     public static function sync_wc_to_bfs(): void {
-        if (self::$is_syncing || !is_user_logged_in() || is_admin()) {
+        if (self::$is_syncing || !is_user_logged_in() || (is_admin() && !wp_doing_ajax())) {
             return;
         }
 

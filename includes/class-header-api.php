@@ -128,7 +128,13 @@ class BFS_Header_API {
         $cart_count = 0;
         $cart_total = '0.00';
         
-        if ( class_exists( 'WooCommerce' ) && isset( WC()->cart ) ) {
+        if ( class_exists( 'BFS_Cart_API' ) ) {
+            $cart_api   = new BFS_Cart_API();
+            $cart       = $cart_api->load_session( $request );
+            $formatted  = $cart_api->format_cart( $cart );
+            $cart_count = isset( $formatted['item_count'] ) ? (int) $formatted['item_count'] : 0;
+            $cart_total = isset( $formatted['totals']['subtotal'] ) ? $formatted['totals']['subtotal'] : '0.00';
+        } elseif ( class_exists( 'WooCommerce' ) && isset( WC()->cart ) ) {
             // Using WC() instance to fetch cart details
             $cart_count = WC()->cart->get_cart_contents_count();
             
