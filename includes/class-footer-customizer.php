@@ -101,5 +101,20 @@ class BFS_Footer_Customizer {
             'section'     => 'bfs_footer_section',
             'type'        => 'text',
         ) );
+
+        // Footer Copyright Setting
+        $wp_customize->add_setting( 'bfs_footer_copyright', array(
+            'default'           => '© [year] All rights reserved.',
+            'type'              => 'option',
+            'sanitize_callback' => 'sanitize_text_field',
+            'transport'         => 'refresh',
+        ) );
+
+        $wp_customize->add_control( 'bfs_footer_copyright', array(
+            'label'       => __( 'Copyright Text', 'bfs-app-api' ),
+            'section'     => 'bfs_footer_section',
+            'type'        => 'text',
+            'description' => __( 'Use [year] to automatically display the current year.', 'bfs-app-api' ),
+        ) );
     }
 }
